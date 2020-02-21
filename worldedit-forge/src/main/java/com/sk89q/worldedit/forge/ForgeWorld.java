@@ -31,6 +31,9 @@ import com.sk89q.worldedit.blocks.BaseItem;
 import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
+import com.sk89q.worldedit.function.mask.AbstractExtentMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.mask.Mask2D;
 import com.sk89q.worldedit.internal.Constants;
 import com.sk89q.worldedit.internal.block.BlockStateIdAccess;
 import com.sk89q.worldedit.internal.util.BiomeMath;
@@ -52,6 +55,7 @@ import com.sk89q.worldedit.world.weather.WeatherType;
 import com.sk89q.worldedit.world.weather.WeatherTypes;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.FlowingFluidBlock;
 import net.minecraft.block.LeavesBlock;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.item.ItemEntity;
@@ -566,6 +570,24 @@ public class ForgeWorld extends AbstractWorld {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Mask createLiquidMask() {
+        return new AbstractExtentMask(this) {
+            @Override
+            public boolean test(BlockVector3 vector) {
+//                return getBlock(vector).getBlockType().getMaterial().isAir()
+//                        && !getWorld().getFluidState(ForgeAdapter.toBlockPos(vector)).isEmpty();
+                return getWorld().getBlockState(ForgeAdapter.toBlockPos(vector)).getBlock() instanceof FlowingFluidBlock;
+            }
+
+            @Nullable
+            @Override
+            public Mask2D toMask2D() {
+                return null;
+            }
+        };
     }
 
     /**

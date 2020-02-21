@@ -31,6 +31,9 @@ import com.sk89q.worldedit.blocks.BaseItem;
 import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
+import com.sk89q.worldedit.function.mask.AbstractExtentMask;
+import com.sk89q.worldedit.function.mask.Mask;
+import com.sk89q.worldedit.function.mask.Mask2D;
 import com.sk89q.worldedit.internal.Constants;
 import com.sk89q.worldedit.internal.block.BlockStateIdAccess;
 import com.sk89q.worldedit.internal.util.BiomeMath;
@@ -51,6 +54,7 @@ import com.sk89q.worldedit.world.item.ItemTypes;
 import com.sk89q.worldedit.world.weather.WeatherType;
 import com.sk89q.worldedit.world.weather.WeatherTypes;
 import net.minecraft.block.Block;
+import net.minecraft.block.FluidBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
@@ -579,6 +583,22 @@ public class FabricWorld extends AbstractWorld {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Mask createLiquidMask() {
+        return new AbstractExtentMask(this) {
+            @Override
+            public boolean test(BlockVector3 vector) {
+                return getWorld().getBlockState(FabricAdapter.toBlockPos(vector)).getBlock() instanceof FluidBlock;
+            }
+
+            @Nullable
+            @Override
+            public Mask2D toMask2D() {
+                return null;
+            }
+        };
     }
 
     /**
