@@ -19,7 +19,6 @@
 
 package com.sk89q.worldedit.sponge;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.sk89q.util.StringUtil;
 import com.sk89q.worldedit.blocks.BaseItemStack;
 import com.sk89q.worldedit.entity.BaseEntity;
@@ -38,8 +37,9 @@ import com.sk89q.worldedit.world.block.BlockStateHolder;
 import com.sk89q.worldedit.world.gamemode.GameMode;
 import com.sk89q.worldedit.world.gamemode.GameModes;
 import com.sk89q.worldedit.world.item.ItemTypes;
+import org.spongepowered.api.CatalogKey;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
@@ -48,11 +48,11 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.serializer.TextSerializers;
-import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.server.ServerWorld;
+import org.spongepowered.math.vector.Vector3d;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
@@ -73,9 +73,9 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public BaseItemStack getItemInHand(HandSide handSide) {
-        Optional<ItemStack> is = this.player.getItemInHand(handSide == HandSide.MAIN_HAND
-                ? HandTypes.MAIN_HAND : HandTypes.OFF_HAND);
-        return is.map(itemStack -> new BaseItemStack(ItemTypes.get(itemStack.getType().getId()))).orElse(null);
+        ItemStack is = this.player.getItemInHand(handSide == HandSide.MAIN_HAND
+                ? HandTypes.MAIN_HAND.get() : HandTypes.OFF_HAND.get());
+        return new BaseItemStack(ItemTypes.get(is.getType().getKey().getFormatted()));
     }
 
     @Override
@@ -85,7 +85,7 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public String getDisplayName() {
-        return player.getDisplayNameData().displayName().getDirect().map(TextSerializers.LEGACY_FORMATTING_CODE::serialize).orElse(getName());
+        return player.get(Keys.DISPLAY_NAME).map(TextSerializers.LEGACY_FORMATTING_CODE::serialize).orElse(getName());
     }
 
     @Override
@@ -95,7 +95,7 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public Location getLocation() {
-        org.spongepowered.api.world.Location<World> entityLoc = this.player.getLocation();
+        org.spongepowered.api.world.Location entityLoc = this.player.getLocation();
         Vector3d entityRot = this.player.getRotation();
 
         return SpongeWorldEdit.inst().getAdapter().adapt(entityLoc, entityRot);
@@ -108,13 +108,14 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public com.sk89q.worldedit.world.World getWorld() {
-        return SpongeWorldEdit.inst().getAdapter().getWorld(player.getWorld());
+        return SpongeWorldEdit.inst().getAdapter().getWorld((ServerWorld) player.getWorld());
     }
 
     @Override
     public void giveItem(BaseItemStack itemStack) {
         this.player.getInventory().offer(
-                ItemStack.of(Sponge.getGame().getRegistry().getType(ItemType.class, itemStack.getType().getId()).get(),
+                ItemStack.of(Sponge.getGame().getRegistry().getCatalogRegistry().get(ItemType.class,
+                        CatalogKey.resolve(itemStack.getType().getId())).get(),
                 itemStack.getAmount())
         );
     }
@@ -140,17 +141,17 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public void printDebug(String msg) {
-        sendColorized(msg, TextColors.GRAY);
+        sendColorized(msg, TextColors.GRAY.get());
     }
 
     @Override
     public void print(String msg) {
-        sendColorized(msg, TextColors.LIGHT_PURPLE);
+        sendColorized(msg, TextColors.LIGHT_PURPLE.get());
     }
 
     @Override
     public void printError(String msg) {
-        sendColorized(msg, TextColors.RED);
+        sendColorized(msg, TextColors.RED.get());
     }
 
     @Override
@@ -166,7 +167,7 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public void setPosition(Vector3 pos, float pitch, float yaw) {
-        org.spongepowered.api.world.Location<World> loc = new org.spongepowered.api.world.Location<>(
+        org.spongepowered.api.world.Location loc = org.spongepowered.api.world.Location.of(
                 this.player.getWorld(), pos.getX(), pos.getY(), pos.getZ()
         );
 
@@ -196,13 +197,14 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public GameMode getGameMode() {
-        return GameModes.get(player.getGameModeData().type().get().getId());
+        return GameModes.get(player.get(Keys.GAME_MODE).get().getKey().getFormatted());
     }
 
     @Override
     public void setGameMode(GameMode gameMode) {
-        player.getGameModeData().type().set(Sponge.getRegistry().getType(org.spongepowered.api.entity.living.player.gamemode.GameMode.class,
-                gameMode.getId()).get());
+        player.offer(Keys.GAME_MODE,
+                Sponge.getRegistry().getCatalogRegistry().get(org.spongepowered.api.entity.living.player.gamemode.GameMode.class,
+                        CatalogKey.resolve(gameMode.getId())).get());
     }
 
     @Override
@@ -217,7 +219,7 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public <B extends BlockStateHolder<B>> void sendFakeBlock(BlockVector3 pos, B block) {
-        org.spongepowered.api.world.Location<World> loc = player.getWorld().getLocation(pos.getX(), pos.getY(), pos.getZ());
+        org.spongepowered.api.world.Location loc = player.getWorld().getLocation(pos.getX(), pos.getY(), pos.getZ());
         if (block == null) {
             player.sendBlockChange(loc.getBlockPosition(), loc.getBlock());
         } else {

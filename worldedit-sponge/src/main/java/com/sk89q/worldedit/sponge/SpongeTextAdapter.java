@@ -31,7 +31,7 @@ public class SpongeTextAdapter {
 
     public static Text convert(Component component, Locale locale) {
         component = WorldEditText.format(component, locale);
-        return TextSerializers.JSON.deserialize(GsonComponentSerializer.INSTANCE.serialize(component));
+        return TextSerializers.JSON.get().deserialize(GsonComponentSerializer.INSTANCE.serialize(component));
     }
 
     private SpongeTextAdapter() {

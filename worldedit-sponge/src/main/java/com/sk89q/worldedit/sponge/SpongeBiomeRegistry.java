@@ -60,10 +60,9 @@ class SpongeBiomeRegistry implements BiomeRegistry {
             this.biome = biome;
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public String getName() {
-            return biome.getName();
+            return biome.getKey().getFormatted();
         }
     }
 

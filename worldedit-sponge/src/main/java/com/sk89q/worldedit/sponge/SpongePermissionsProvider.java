@@ -20,7 +20,7 @@
 package com.sk89q.worldedit.sponge;
 
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.CommandCallable;
+import org.spongepowered.api.command.Command;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.service.permission.PermissionDescription;
 import org.spongepowered.api.service.permission.PermissionService;
@@ -32,9 +32,9 @@ public class SpongePermissionsProvider {
         return player.hasPermission(permission);
     }
 
-    public void registerPermission(CommandCallable command, String permission) {
+    public void registerPermission(Command command, String permission) {
         Sponge.getGame().getServiceManager().getRegistration(PermissionService.class).ifPresent((permissionService -> {
-            PermissionDescription.Builder permissionBuilder = permissionService.getProvider().newDescriptionBuilder(SpongeWorldEdit.inst());
+            PermissionDescription.Builder permissionBuilder = permissionService.getProvider().newDescriptionBuilder(SpongeWorldEdit.container());
             permissionBuilder.id(permission).register();
         }));
     }

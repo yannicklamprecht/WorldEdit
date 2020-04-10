@@ -21,14 +21,14 @@ package com.sk89q.worldedit.sponge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.entity.metadata.EntityProperties;
 import com.sk89q.worldedit.extent.Extent;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.NullWorld;
-import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.server.ServerWorld;
+import org.spongepowered.math.vector.Vector3d;
 
 import java.lang.ref.WeakReference;
 
@@ -57,7 +57,7 @@ class SpongeEntity implements Entity {
     public Location getLocation() {
         org.spongepowered.api.entity.Entity entity = entityRef.get();
         if (entity != null) {
-            org.spongepowered.api.world.Location<World> entityLoc = entity.getLocation();
+            org.spongepowered.api.world.Location entityLoc = entity.getLocation();
             Vector3d entityRot = entity.getRotation();
 
             return SpongeWorldEdit.inst().getAdapter().adapt(entityLoc, entityRot);
@@ -80,7 +80,7 @@ class SpongeEntity implements Entity {
     public Extent getExtent() {
         org.spongepowered.api.entity.Entity entity = entityRef.get();
         if (entity != null) {
-            return SpongeWorldEdit.inst().getAdapter().getWorld(entity.getWorld());
+            return SpongeWorldEdit.inst().getAdapter().getWorld((ServerWorld) entity.getWorld());
         } else {
             return NullWorld.getInstance();
         }

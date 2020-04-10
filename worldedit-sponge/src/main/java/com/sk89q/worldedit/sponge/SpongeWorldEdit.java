@@ -41,7 +41,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.CommandCause;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
@@ -59,8 +59,9 @@ import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.channel.MessageReceiver;
 import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.server.ServerWorld;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +121,7 @@ public class SpongeWorldEdit {
         // Load configuration
         config.load();
 
-        Task.builder().interval(30, TimeUnit.SECONDS).execute(ThreadSafeCache.getInstance()).submit(this);
+        Task.builder().interval(30, TimeUnit.SECONDS).execute(ThreadSafeCache.getInstance()).build();
     }
 
     @Listener
@@ -148,20 +149,20 @@ public class SpongeWorldEdit {
         this.platform = new SpongePlatform(this);
         this.provider = new SpongePermissionsProvider();
 
-        for (BlockType blockType : Sponge.getRegistry().getAllOf(BlockType.class)) {
+        Sponge.getRegistry().getCatalogRegistry().getAllOf(BlockType.class).forEach(blockType -> {
             // TODO Handle blockstate stuff
-            String id = blockType.getId();
+            String id = blockType.getKey().getFormatted();
             if (!com.sk89q.worldedit.world.block.BlockType.REGISTRY.keySet().contains(id)) {
                 com.sk89q.worldedit.world.block.BlockType.REGISTRY.register(id, new com.sk89q.worldedit.world.block.BlockType(id));
             }
-        }
+        });
 
-        for (ItemType itemType : Sponge.getRegistry().getAllOf(ItemType.class)) {
-            String id = itemType.getId();
+        Sponge.getRegistry().getCatalogRegistry().getAllOf(ItemType.class).forEach(itemType -> {
+            String id = itemType.getKey().getFormatted();
             if (!com.sk89q.worldedit.world.item.ItemType.REGISTRY.keySet().contains(id)) {
                 com.sk89q.worldedit.world.item.ItemType.REGISTRY.register(id, new com.sk89q.worldedit.world.item.ItemType(id));
             }
-        }
+        });
 
         WorldEdit.getInstance().getPlatformManager().register(platform);
     }
@@ -245,17 +246,17 @@ public class SpongeWorldEdit {
         SpongePlayer player = wrapPlayer(spongePlayer);
         com.sk89q.worldedit.world.World world = player.getWorld();
 
-        BlockSnapshot targetBlock = event.getTargetBlock();
-        Optional<Location<World>> optLoc = targetBlock.getLocation();
+        BlockSnapshot targetBlock = event.getBlock();
+        Optional<Location> optLoc = targetBlock.getLocation();
 
         BlockType interactedType = targetBlock.getState().getType();
         if (event instanceof InteractBlockEvent.Primary) {
-            if (interactedType != BlockTypes.AIR) {
+            if (interactedType != BlockTypes.AIR.get()) {
                 if (!optLoc.isPresent()) {
                     return;
                 }
 
-                Location<World> loc = optLoc.get();
+                Location loc = optLoc.get();
                 com.sk89q.worldedit.util.Location pos = new com.sk89q.worldedit.util.Location(
                         world, loc.getX(), loc.getY(), loc.getZ());
 
@@ -263,20 +264,16 @@ public class SpongeWorldEdit {
                     event.setCancelled(true);
                 }
 
-                if (we.handleArmSwing(player)) {
-                    event.setCancelled(true);
-                }
-            } else {
-                if (we.handleArmSwing(player)) {
-                    event.setCancelled(true);
-                }
+            }
+            if (we.handleArmSwing(player)) {
+                event.setCancelled(true);
             }
         } else if (event instanceof InteractBlockEvent.Secondary) {
             if (!optLoc.isPresent()) {
                 return;
             }
 
-            Location<World> loc = optLoc.get();
+            Location loc = optLoc.get();
             com.sk89q.worldedit.util.Location pos = new com.sk89q.worldedit.util.Location(
                     world, loc.getX(), loc.getY(), loc.getZ());
 
@@ -314,12 +311,16 @@ public class SpongeWorldEdit {
         return new SpongePlayer(platform, player);
     }
 
-    public Actor wrapCommandSource(CommandSource sender) {
-        if (sender instanceof Player) {
-            return wrapPlayer((Player) sender);
+    public Actor wrapCommandCause(CommandCause cause) {
+        Object rootCause = cause.getCause().root();
+        if (rootCause instanceof Player) {
+            return wrapPlayer((Player) rootCause);
         }
-
-        return new SpongeCommandSender(this, sender);
+        if (rootCause instanceof MessageReceiver) {
+            return new SpongeCommandSender(this, (MessageReceiver) rootCause);
+        }
+        // TODO
+        return null;
     }
 
     /**
@@ -339,7 +340,7 @@ public class SpongeWorldEdit {
      * @param world the world
      * @return the WorldEdit world
      */
-    public SpongeWorld getWorld(World world) {
+    public SpongeWorld getWorld(ServerWorld world) {
         checkNotNull(world);
         return getAdapter().getWorld(world);
     }

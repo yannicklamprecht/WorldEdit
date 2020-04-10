@@ -19,9 +19,7 @@
 
 package com.sk89q.worldedit.sponge;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.platform.CommandEvent;
@@ -38,13 +36,15 @@ import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.registry.Registries;
 import org.enginehub.piston.Command;
 import org.enginehub.piston.CommandManager;
+import org.spongepowered.api.CatalogKey;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.CommandException;
+import org.spongepowered.api.command.CommandCause;
 import org.spongepowered.api.command.CommandResult;
-import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.command.exception.CommandException;
 import org.spongepowered.api.entity.EntityType;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.server.ServerWorld;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ class SpongePlatform extends AbstractPlatform implements MultiUserPlatform {
 
     @Override
     public boolean isValidMobType(String type) {
-        return Sponge.getRegistry().getType(EntityType.class, type).isPresent();
+        return Sponge.getRegistry().getCatalogRegistry().get(EntityType.class, CatalogKey.resolve(type)).isPresent();
     }
 
     @Override
@@ -93,15 +93,15 @@ class SpongePlatform extends AbstractPlatform implements MultiUserPlatform {
 
     @Override
     public int schedule(long delay, long period, Runnable task) {
-        Task.builder().delayTicks(delay).intervalTicks(period).execute(task).submit(SpongeWorldEdit.inst());
+        Task.builder().delayTicks(delay).intervalTicks(period).execute(task).build();
         return 0; // TODO This isn't right, but we only check for -1 values
     }
 
     @Override
     public List<? extends com.sk89q.worldedit.world.World> getWorlds() {
-        Collection<org.spongepowered.api.world.World> worlds = Sponge.getServer().getWorlds();
+        Collection<ServerWorld> worlds = Sponge.getServer().getWorldManager().getWorlds();
         List<com.sk89q.worldedit.world.World> ret = new ArrayList<>(worlds.size());
-        for (org.spongepowered.api.world.World world : worlds) {
+        for (ServerWorld world : worlds) {
             ret.add(SpongeWorldEdit.inst().getAdapter().getWorld(world));
         }
         return ret;
@@ -113,7 +113,7 @@ class SpongePlatform extends AbstractPlatform implements MultiUserPlatform {
         if (player instanceof SpongePlayer) {
             return player;
         } else {
-            Optional<org.spongepowered.api.entity.living.player.Player> optPlayer = Sponge.getServer().getPlayer(player.getUniqueId());
+            Optional<? extends org.spongepowered.api.entity.living.player.Player> optPlayer = Sponge.getServer().getPlayer(player.getUniqueId());
             return optPlayer.<Player>map(player1 -> new SpongePlayer(this, player1)).orElse(null);
         }
     }
@@ -124,8 +124,8 @@ class SpongePlatform extends AbstractPlatform implements MultiUserPlatform {
         if (world instanceof SpongeWorld) {
             return world;
         } else {
-            for (org.spongepowered.api.world.World ws : Sponge.getServer().getWorlds()) {
-                if (ws.getName().equals(world.getName())) {
+            for (ServerWorld ws : Sponge.getServer().getWorldManager().getWorlds()) {
+                if (ws.getWorldStorage().getWorldProperties().getDirectoryName().equals(world.getName())) {
                     return SpongeWorldEdit.inst().getAdapter().getWorld(ws);
                 }
             }
@@ -139,22 +139,20 @@ class SpongePlatform extends AbstractPlatform implements MultiUserPlatform {
         for (Command command : manager.getAllCommands().collect(toList())) {
             CommandAdapter adapter = new CommandAdapter(command) {
                 @Override
-                public CommandResult process(CommandSource source, String arguments) throws org.spongepowered.api.command.CommandException {
-                    CommandEvent weEvent = new CommandEvent(SpongeWorldEdit.inst().wrapCommandSource(source), command.getName() + " " + arguments);
+                public CommandResult process(CommandCause source, String arguments) throws CommandException {
+                    CommandEvent weEvent = new CommandEvent(SpongeWorldEdit.inst().wrapCommandCause(source), command.getName() + " " + arguments);
                     WorldEdit.getInstance().getEventBus().post(weEvent);
                     return weEvent.isCancelled() ? CommandResult.success() : CommandResult.empty();
                 }
 
                 @Override
-                public List<String> getSuggestions(CommandSource source, String arguments, @Nullable Location<org.spongepowered.api.world.World> targetPosition) throws CommandException {
-                    CommandSuggestionEvent weEvent = new CommandSuggestionEvent(SpongeWorldEdit.inst().wrapCommandSource(source), command.getName() + " " + arguments);
+                public List<String> getSuggestions(CommandCause source, String arguments, @Nullable Location targetPosition) throws CommandException {
+                    CommandSuggestionEvent weEvent = new CommandSuggestionEvent(SpongeWorldEdit.inst().wrapCommandCause(source), command.getName() + " " + arguments);
                     WorldEdit.getInstance().getEventBus().post(weEvent);
                     return CommandUtil.fixSuggestions(arguments, weEvent.getSuggestions());
                 }
             };
-            ImmutableList.Builder<String> aliases = ImmutableList.builder();
-            aliases.add(command.getName()).addAll(command.getAliases());
-            Sponge.getCommandManager().register(SpongeWorldEdit.inst(), adapter, aliases.build());
+            Sponge.getCommandManager().register(SpongeWorldEdit.container(), adapter, command.getName(), command.getAliases().toArray(new String[0]));
         }
     }
 

@@ -20,6 +20,7 @@
 package com.sk89q.worldedit.sponge;
 
 import com.sk89q.worldedit.LocalSession;
+import org.spongepowered.api.CatalogKey;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
@@ -32,12 +33,12 @@ import org.spongepowered.api.network.RemoteConnection;
 import java.nio.charset.StandardCharsets;
 
 public class CUIChannelHandler implements RawDataListener {
-    public static final String CUI_PLUGIN_CHANNEL = "worldedit:cui";
+    public static final CatalogKey CUI_PLUGIN_CHANNEL = CatalogKey.resolve("worldedit:cui");
 
     private static ChannelBinding.RawDataChannel channel;
 
     public static void init() {
-        channel = Sponge.getChannelRegistrar().createRawChannel(SpongeWorldEdit.inst(), CUI_PLUGIN_CHANNEL);
+        channel = Sponge.getChannelRegistrar().createRawChannel(SpongeWorldEdit.container(), CUI_PLUGIN_CHANNEL);
         channel.addListener(Platform.Type.SERVER, new CUIChannelHandler());
     }
 

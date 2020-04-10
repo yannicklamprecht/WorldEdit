@@ -30,9 +30,9 @@ import com.sk89q.worldedit.util.auth.AuthorizationException;
 import com.sk89q.worldedit.util.formatting.WorldEditText;
 import com.sk89q.worldedit.util.formatting.text.Component;
 import com.sk89q.worldedit.util.formatting.text.adapter.spongeapi.TextAdapter;
-import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.channel.MessageReceiver;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.serializer.TextSerializers;
@@ -50,10 +50,10 @@ public class SpongeCommandSender implements Actor {
      */
     private static final UUID DEFAULT_ID = UUID.fromString("a233eb4b-4cab-42cd-9fd9-7e7b9a3f74be");
 
-    private CommandSource sender;
+    private MessageReceiver sender;
     private SpongeWorldEdit plugin;
 
-    public SpongeCommandSender(SpongeWorldEdit plugin, CommandSource sender) {
+    public SpongeCommandSender(SpongeWorldEdit plugin, MessageReceiver sender) {
         checkNotNull(plugin);
         checkNotNull(sender);
         checkArgument(!(sender instanceof Player), "Cannot wrap a player");
@@ -69,7 +69,8 @@ public class SpongeCommandSender implements Actor {
 
     @Override
     public String getName() {
-        return sender.getName();
+        // TODO
+        return "Unknown Sender";
     }
 
     @Override
@@ -81,17 +82,17 @@ public class SpongeCommandSender implements Actor {
 
     @Override
     public void print(String msg) {
-        sendColorized(msg, TextColors.LIGHT_PURPLE);
+        sendColorized(msg, TextColors.LIGHT_PURPLE.get());
     }
 
     @Override
     public void printDebug(String msg) {
-        sendColorized(msg, TextColors.GRAY);
+        sendColorized(msg, TextColors.GRAY.get());
     }
 
     @Override
     public void printError(String msg) {
-        sendColorized(msg, TextColors.RED);
+        sendColorized(msg, TextColors.RED.get());
     }
 
     @Override

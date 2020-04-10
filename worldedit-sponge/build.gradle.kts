@@ -8,13 +8,14 @@ applyPlatformAndCoreConfiguration()
 applyShadowConfiguration()
 
 repositories {
+    mavenLocal()
     maven { url = uri("https://repo.codemc.org/repository/maven-public") }
 }
 
 dependencies {
     compile(project(":worldedit-core"))
     compile(project(":worldedit-libs:sponge"))
-    compile("org.spongepowered:spongeapi:7.1.0")
+    compile("org.spongepowered:spongeapi:8.0.0-SNAPSHOT")
     compile("org.bstats:bstats-sponge:1.7")
     testCompile("org.mockito:mockito-core:1.9.0-rc1")
 }

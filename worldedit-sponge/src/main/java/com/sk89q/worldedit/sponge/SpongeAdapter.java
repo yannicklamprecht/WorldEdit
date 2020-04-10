@@ -21,15 +21,18 @@ package com.sk89q.worldedit.sponge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.math.Vector3;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.biome.BiomeType;
 import com.sk89q.worldedit.world.biome.BiomeTypes;
+import org.spongepowered.api.CatalogKey;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.world.server.ServerWorld;
+import org.spongepowered.math.vector.Vector3d;
+import org.spongepowered.math.vector.Vector3i;
 
 /**
  * Adapts between Sponge and WorldEdit equivalent objects.
@@ -40,27 +43,12 @@ public class SpongeAdapter {
     }
 
     /**
-     * Create a WorldEdit world from a Sponge extent.
-     *
-     * @param world the Sponge extent
-     * @return a WorldEdit world
-     */
-    public static World checkWorld(org.spongepowered.api.world.extent.Extent world) {
-        checkNotNull(world);
-        if (world instanceof org.spongepowered.api.world.World) {
-            return adapt((org.spongepowered.api.world.World) world);
-        } else {
-            throw new IllegalArgumentException("Extent type is not a world");
-        }
-    }
-
-    /**
      * Create a WorldEdit world from a Sponge world.
      *
      * @param world the Sponge world
      * @return a WorldEdit world
      */
-    public static World adapt(org.spongepowered.api.world.World world) {
+    public static World adapt(ServerWorld world) {
         checkNotNull(world);
         return SpongeWorldEdit.inst().getWorld(world);
     }
@@ -91,12 +79,12 @@ public class SpongeAdapter {
      * @param world the WorldEdit world
      * @return a Sponge world
      */
-    public static org.spongepowered.api.world.World adapt(World world) {
+    public static ServerWorld adapt(World world) {
         checkNotNull(world);
         if (world instanceof SpongeWorld) {
             return ((SpongeWorld) world).getWorld();
         } else {
-            org.spongepowered.api.world.World match = Sponge.getServer().getWorld(world.getName()).orElse(null);
+            ServerWorld match = Sponge.getServer().getWorldManager().getWorld(world.getName()).orElse(null);
             if (match != null) {
                 return match;
             } else {
@@ -106,11 +94,11 @@ public class SpongeAdapter {
     }
 
     public static BiomeType adapt(org.spongepowered.api.world.biome.BiomeType biomeType) {
-        return BiomeTypes.get(biomeType.getId());
+        return BiomeTypes.get(biomeType.getKey().getFormatted());
     }
 
     public static org.spongepowered.api.world.biome.BiomeType adapt(BiomeType biomeType) {
-        return Sponge.getRegistry().getType(org.spongepowered.api.world.biome.BiomeType.class, biomeType.getId()).orElse(null);
+        return Sponge.getRegistry().getCatalogRegistry().get(org.spongepowered.api.world.biome.BiomeType.class, CatalogKey.resolve(biomeType.getId())).orElse(null);
     }
 
     /**
@@ -119,11 +107,11 @@ public class SpongeAdapter {
      * @param location the Sponge location
      * @return a WorldEdit location
      */
-    public static Location adapt(org.spongepowered.api.world.Location<org.spongepowered.api.world.World> location, Vector3d rotation) {
+    public static Location adapt(org.spongepowered.api.world.Location location, Vector3d rotation) {
         checkNotNull(location);
         Vector3 position = asVector(location);
         return new Location(
-                adapt(location.getExtent()),
+                adapt(location.getWorld()),
                 position,
                 (float) rotation.getX(),
                 (float) rotation.getY());
@@ -135,10 +123,10 @@ public class SpongeAdapter {
      * @param location the WorldEdit location
      * @return a Sponge location
      */
-    public static org.spongepowered.api.world.Location<org.spongepowered.api.world.World> adapt(Location location) {
+    public static org.spongepowered.api.world.Location adapt(Location location) {
         checkNotNull(location);
         Vector3 position = location.toVector();
-        return new org.spongepowered.api.world.Location<>(
+        return org.spongepowered.api.world.Location.of(
                 adapt((World) location.getExtent()),
                 position.getX(), position.getY(), position.getZ());
     }
@@ -160,7 +148,7 @@ public class SpongeAdapter {
      * @param location The Bukkit location
      * @return a WorldEdit vector
      */
-    public static Vector3 asVector(org.spongepowered.api.world.Location<org.spongepowered.api.world.World> location) {
+    public static Vector3 asVector(org.spongepowered.api.world.Location location) {
         checkNotNull(location);
         return Vector3.at(location.getX(), location.getY(), location.getZ());
     }
@@ -171,8 +159,28 @@ public class SpongeAdapter {
      * @param location The Bukkit location
      * @return a WorldEdit vector
      */
-    public static BlockVector3 asBlockVector(org.spongepowered.api.world.Location<org.spongepowered.api.world.World> location) {
+    public static BlockVector3 asBlockVector(org.spongepowered.api.world.Location location) {
         checkNotNull(location);
         return BlockVector3.at(location.getX(), location.getY(), location.getZ());
+    }
+
+    /**
+     * Create a WorldEdit BlockVector3 from a Sponge Vector3i.
+     *
+     * @param vec The Sponge Vector3i
+     * @return The WorldEdit BlockVector3
+     */
+    public static BlockVector3 adapt(Vector3i vec) {
+        return BlockVector3.at(vec.getX(), vec.getY(), vec.getZ());
+    }
+
+    /**
+     * Create a Sponge Vector3i from a WorldEdit BlockVector3.
+     *
+     * @param vec The WorldEdit BlockVector3
+     * @return The Sponge Vector3i
+     */
+    public static Vector3i adapt(BlockVector3 vec) {
+        return new Vector3i(vec.getX(), vec.getY(), vec.getZ());
     }
 }
