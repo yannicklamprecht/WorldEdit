@@ -60,13 +60,15 @@ public class CraftScriptContext extends CraftScriptEnvironment {
     /**
      * Get an edit session. Every subsequent call returns a new edit session.
      * Usually you only need to use one edit session.
-     * 
+     *
      * @return an edit session
      */
     public EditSession remember() {
-        EditSession editSession = controller.getEditSessionFactory()
-                .getEditSession(player.getWorld(),
-                        session.getBlockChangeLimit(), session.getBlockBag(player), player);
+        EditSession editSession = controller.newEditSessionBuilder()
+            .locatableActor(player)
+            .maxBlocks(session.getBlockChangeLimit())
+            .blockBag(session.getBlockBag(player))
+            .build();
         Request.request().setEditSession(editSession);
         editSession.enableStandardMode();
         editSessions.add(editSession);
@@ -75,7 +77,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Get the player.
-     * 
+     *
      * @return the calling player
      */
     public Player getPlayer() {
@@ -84,7 +86,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Get the player's session.
-     * 
+     *
      * @return a session
      */
     public LocalSession getSession() {
@@ -93,7 +95,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Get the configuration for WorldEdit.
-     * 
+     *
      * @return the configuration
      */
     public LocalConfiguration getConfiguration() {
@@ -102,7 +104,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Get a list of edit sessions that have been created.
-     * 
+     *
      * @return a list of created {@code EditSession}s
      */
     public List<EditSession> getEditSessions() {
@@ -111,7 +113,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Print a regular message to the user.
-     * 
+     *
      * @param message a message
      */
     public void print(String message) {
@@ -120,7 +122,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Print an error message to the user.
-     * 
+     *
      * @param message a message
      */
     public void error(String message) {
@@ -129,7 +131,7 @@ public class CraftScriptContext extends CraftScriptEnvironment {
 
     /**
      * Print a raw message to the user.
-     * 
+     *
      * @param message a message
      */
     public void printRaw(String message) {
@@ -188,8 +190,8 @@ public class CraftScriptContext extends CraftScriptEnvironment {
      *
      * @param list the input
      * @return pattern
-     * @throws UnknownItemException 
-     * @throws DisallowedItemException 
+     * @throws UnknownItemException
+     * @throws DisallowedItemException
      */
     public Pattern getBlockPattern(String list) throws WorldEditException {
         ParserContext context = new ParserContext();
@@ -205,8 +207,8 @@ public class CraftScriptContext extends CraftScriptEnvironment {
      * @param list a list
      * @param allBlocksAllowed true if all blocks are allowed
      * @return set
-     * @throws UnknownItemException 
-     * @throws DisallowedItemException 
+     * @throws UnknownItemException
+     * @throws DisallowedItemException
      */
     public Set<BaseBlock> getBlocks(String list, boolean allBlocksAllowed) throws WorldEditException {
         ParserContext context = new ParserContext();
@@ -223,15 +225,15 @@ public class CraftScriptContext extends CraftScriptEnvironment {
      * directory traversal exploits by checking the root directory and the file
      * directory. On success, a {@code java.io.File} object will be
      * returned.
-     * 
+     *
      * <p>Use this method if you need to read a file from a directory.</p>
-     * 
+     *
      * @param folder sub-directory to look in
      * @param filename filename (user-submitted)
      * @param defaultExt default extension to append if there is none
      * @param exts list of extensions for file open dialog, null for no filter
      * @return a file
-     * @throws FilenameException 
+     * @throws FilenameException
      */
     public File getSafeOpenFile(String folder, String filename, String defaultExt, String... exts) throws FilenameException {
         File dir = controller.getWorkingDirectoryFile(folder);
@@ -244,15 +246,15 @@ public class CraftScriptContext extends CraftScriptEnvironment {
      * directory traversal exploits by checking the root directory and the file
      * directory. On success, a {@code java.io.File} object will be
      * returned.
-     * 
+     *
      * <p>Use this method if you need to read a file from a directory.</p>
-     * 
+     *
      * @param folder sub-directory to look in
      * @param filename filename (user-submitted)
      * @param defaultExt default extension to append if there is none
      * @param exts list of extensions for file save dialog, null for no filter
      * @return a file
-     * @throws FilenameException 
+     * @throws FilenameException
      */
     public File getSafeSaveFile(String folder, String filename, String defaultExt, String... exts) throws FilenameException {
         File dir = controller.getWorkingDirectoryFile(folder);
