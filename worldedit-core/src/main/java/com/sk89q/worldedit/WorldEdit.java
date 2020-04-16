@@ -709,7 +709,7 @@ public final class WorldEdit {
             logger.warn("Failed to execute script", e);
         } finally {
             for (EditSession editSession : scriptContext.getEditSessions()) {
-                editSession.flushSession();
+                editSession.close();
                 session.remember(editSession);
             }
         }

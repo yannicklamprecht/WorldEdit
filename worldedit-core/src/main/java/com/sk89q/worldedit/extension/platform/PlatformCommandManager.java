@@ -533,7 +533,7 @@ public final class PlatformCommandManager {
             if (editSessionOpt.isPresent()) {
                 EditSession editSession = editSessionOpt.get();
                 session.remember(editSession);
-                editSession.flushSession();
+                editSession.close();
 
                 if (config.profile) {
                     long time = System.currentTimeMillis() - start;
