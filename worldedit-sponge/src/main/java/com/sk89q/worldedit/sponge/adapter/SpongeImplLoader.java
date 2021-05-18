@@ -48,12 +48,15 @@ public class SpongeImplLoader {
     private static final String CLASS_SUFFIX = ".class";
 
     private static final String LOAD_ERROR_MESSAGE =
-        "\n**********************************************\n"
-            + "** This WorldEdit version does not support your version of Sponge.\n"
-            + "** WorldEdit will not function! \n"
-            + "** \n"
-            + "** Please ensure you are running the latest version\n"
-            + "**********************************************\n";
+        """
+
+            **********************************************
+            ** This WorldEdit version does not support your version of Sponge.
+            ** WorldEdit will not function!\s
+            **\s
+            ** Please ensure you are running the latest version
+            **********************************************
+            """;
 
     /**
      * Create a new instance.
@@ -83,15 +86,16 @@ public class SpongeImplLoader {
      */
     public void addFromJar(File file) throws IOException {
         Closer closer = Closer.create();
-        JarFile jar = closer.register(new JarFile(file));
-        try {
+        try (closer) {
+            JarFile jar = closer.register(new JarFile(file));
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
-                JarEntry jarEntry = (JarEntry) entries.nextElement();
+                JarEntry jarEntry = entries.nextElement();
 
                 String className = jarEntry.getName().replaceAll("[/\\\\]+", ".");
 
-                if (!className.startsWith(SEARCH_PACKAGE_DOT) || jarEntry.isDirectory() || className.contains("$")) {
+                if (!className.startsWith(SEARCH_PACKAGE_DOT) || jarEntry.isDirectory() || className
+                    .contains("$")) {
                     continue;
                 }
 
@@ -100,8 +104,6 @@ public class SpongeImplLoader {
                 className = className.substring(beginIndex, endIndex);
                 adapterCandidates.add(className);
             }
-        } finally {
-            closer.close();
         }
     }
 
@@ -157,7 +159,7 @@ public class SpongeImplLoader {
             try {
                 Class<?> cls = Class.forName(className);
                 if (SpongeImplAdapter.class.isAssignableFrom(cls)) {
-                    suitableAdapters.add((SpongeImplAdapter) cls.newInstance());
+                    suitableAdapters.add((SpongeImplAdapter) cls.getConstructor().newInstance());
                 } else {
                     LOGGER.warn("Failed to load the Sponge adapter class '" + className
                         + "' because it does not implement " + SpongeImplAdapter.class.getCanonicalName());
@@ -181,14 +183,14 @@ public class SpongeImplLoader {
             if (suitableAdapters.size() == 1) {
                 return suitableAdapters.get(0);
             } else {
-                return suitableAdapters.stream().sorted((o1, o2) -> {
+                return suitableAdapters.stream().min((o1, o2) -> {
                     if (o1.isBest() && !o2.isBest()) {
                         return -1;
                     } else if (!o1.isBest() && o2.isBest()) {
                         return 1;
                     }
                     return 0;
-                }).findFirst().orElse(suitableAdapters.get(0));
+                }).orElse(suitableAdapters.get(0));
             }
         }
     }

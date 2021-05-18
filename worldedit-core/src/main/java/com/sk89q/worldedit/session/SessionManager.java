@@ -356,7 +356,7 @@ public class SessionManager {
     @Subscribe
     public void onConfigurationLoad(ConfigurationLoadEvent event) {
         LocalConfiguration config = event.getConfiguration();
-        File dir = new File(config.getWorkingDirectory(), "sessions");
+        File dir = config.getWorkingDirectoryPath().resolve("sessions").toFile();
         store = new JsonFileSessionStore(dir);
     }
 

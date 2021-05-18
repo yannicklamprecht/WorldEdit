@@ -57,7 +57,7 @@ public class BukkitConfiguration extends YAMLConfiguration {
 
     private void migrate(String file, String name) {
         File fromDir = new File(".", file);
-        File toDir = new File(getWorkingDirectory(), file);
+        File toDir = getWorkingDirectoryPath().resolve(file).toFile();
         if (fromDir.exists() & !toDir.exists()) {
             if (fromDir.renameTo(toDir)) {
                 plugin.getLogger().info("Migrated " + name + " folder '" + file

@@ -3,8 +3,6 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 
 plugins {
     id("java-library")
-    id("net.ltgt.apt-eclipse")
-    id("net.ltgt.apt-idea")
     id("antlr")
 }
 
@@ -121,4 +119,5 @@ tasks.named<Copy>("processResources") {
         }
         into("lang")
     }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

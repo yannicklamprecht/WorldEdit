@@ -97,8 +97,8 @@ public interface NbtValued {
     default LazyReference<CompoundBinaryTag> getNbtReference() {
         DeprecationUtil.checkDelegatingOverride(getClass());
 
-        CompoundTag nbtData = getNbtData();
-        return nbtData == null ? null : LazyReference.from(nbtData::asBinaryTag);
+        CompoundBinaryTag nbtData = getNbt();
+        return nbtData == null ? null : LazyReference.computed(nbtData);
     }
 
     /**
